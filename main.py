@@ -76,19 +76,75 @@ def the_biggest_kremowkarz(substring_list = ["rzulty", "rzu\u00c5\u0082ty", "rzu
     for message in messages:
         if "content" in message.keys():
             for substring in substring_list:
-                if message["content"].find(substring):
+                if substring in message["content"]:
                     if message["sender_name"] in the_biggest_kremowkarz_dict.keys():
                         the_biggest_kremowkarz_dict[message["sender_name"]] += 1
                     else:
                         the_biggest_kremowkarz_dict[message["sender_name"]] = 1
     return the_biggest_kremowkarz_dict
+
+def participation_award() -> dict:
+    participation_award_dict = {}
+    messages = prepare_messages()
+    for message in messages:
+        if "reactions" in message.keys():
+            if message["sender_name"] in participation_award_dict.keys():
+                participation_award_dict[message["sender_name"]] += len(message["reactions"])
+            else:
+                participation_award_dict[message["sender_name"]] = len(message["reactions"])
+    return participation_award_dict
+
+def martin_scorsese() -> dict:
+    martin_scorsese_dict = {}
+    substring_list = ["vm.tiktok"]
+    messages = prepare_messages()
+    for message in messages:
+        if "content" in message.keys():
+            for substring in substring_list:
+                if substring in message["content"]:
+                    if message["sender_name"] in martin_scorsese_dict.keys():
+                        martin_scorsese_dict[message["sender_name"]] += 1
+                    else:
+                        martin_scorsese_dict[message["sender_name"]] = 1
+        elif "videos" in message.keys():
+            if message["sender_name"] in martin_scorsese_dict.keys():
+                martin_scorsese_dict[message["sender_name"]] += 1
+            else:
+                martin_scorsese_dict[message["sender_name"]] = 1
+
+    return martin_scorsese_dict
+
+def casual_meth_enjoyer() -> dict:
+    cme_dict = {}
+    cme_dict_per_day = {}
+    messages = prepare_messages()
+    for message in messages:
+        if message["timestamp_day"] in cme_dict.keys():
+            cme_dict[message["timestamp_day"]].append(message)
+        else:
+            cme_dict[message["timestamp_day"]] = [message]
+
+    for date in cme_dict:
+        for message in cme_dict[date]:
+            sender_name = message["sender_name"]
+            if cme_dict_per_day.get(date, {}).get(sender_name) is not None:
+                cme_dict_per_day[date][sender_name] += 1
+            else:
+                cme_dict_per_day.setdefault(date, {}).setdefault(sender_name, 1)
+
+    return cme_dict_per_day
+
 def prepare_messages(listdir = "./enrichedData/") -> list:
+    final_messages = []
     for file in os.listdir(listdir):
         opened_file = json.load(open(listdir+file))
         messages = list({k: v for k, v in opened_file.items() if k.startswith('messages')}.values())
         #flatten list
-        messages = sum(messages, [])
-    return messages
+        messages=sum(messages,[])
+        final_messages.append(messages)
+    final_messages=sum(final_messages,[])
+    #print(len(final_messages))
+    return final_messages
 def translate_timestampt_to_date_time() -> dict:
     for file in os.listdir("./inputData"):
         opened_file = json.load(open("./inputData/"+file))
@@ -115,7 +171,6 @@ def translate_timestampt_to_date_time() -> dict:
 def get_messages_metadata() -> dict:
     all_messages = []
     photos_messages = []
-    photos_messages_by_day_content= {str,list}
     photos_messages_by_day = {}
     messages_by_number_of_reactions = {}
     messages_by_author = {}
@@ -187,14 +242,11 @@ def get_messages_metadata() -> dict:
             "Nagroda im. Remigiusza Mroza": messages_by_author,
             "The biggest tryhard (a k a, don't leave me hanging)": the_biggest_tryhard(),
             "Kremówkarz/kremówkara": the_biggest_kremowkarz(),
-            "Ninja": "value",
-            "Participation award": "value",
-            "Altruistic": messages_by_reaction,
-            "Parcie na szkło": "value",
-            "The meme king/the meme queen": "value",
-            "Casual mefedron enjoyer": "Najwięcej wiadomości wysłanych w ciągu jednego dnia",
-            "Martin Scorsese": "memy nieobrazkowe",
-            "Największy leniuszek": "value"}
+            "Altruistic + Ninja": messages_by_reaction,
+            "Parcie na szkło + Participation award": participation_award(),
+            "Casual mefedron enjoyer": casual_meth_enjoyer(),
+            "Martin Scorsese": martin_scorsese(),
+            }
 
 
 
